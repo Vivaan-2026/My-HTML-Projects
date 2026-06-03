@@ -100,6 +100,61 @@
         transition: left 0.16s ease, top 0.16s ease;
         will-change: left, top;
       }
+
+      .modal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(15, 23, 42, 0.72);
+        z-index: 1000;
+        padding: 20px;
+      }
+
+      .modal.active {
+        display: flex;
+      }
+
+      .dialog {
+        position: relative;
+        width: min(520px, 100%);
+        padding: 28px;
+        border-radius: 22px;
+        background: #ffffff;
+        color: #102a43;
+        box-shadow: 0 24px 60px rgba(12, 29, 56, 0.18);
+      }
+
+      .dialog h2 {
+        margin-top: 0;
+        margin-bottom: 12px;
+        font-size: 1.7rem;
+      }
+
+      .dialog p {
+        margin: 0;
+        line-height: 1.6;
+        color: #334155;
+      }
+
+      .close-button {
+        position: absolute;
+        top: 18px;
+        right: 18px;
+        padding: 10px 16px;
+        border: none;
+        border-radius: 999px;
+        background: #ef4444;
+        color: white;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.15s ease, top 0.15s ease, left 0.15s ease;
+      }
+
+      .close-button:hover {
+        background: #dc2626;
+      }
     </style>
   </head>
   <body>
@@ -118,6 +173,14 @@
         <p>This page has been cleaned and restored. The sidebar is intact, and the markup now validates properly.</p>
       </main>
     </div>
+
+    <div class="modal" id="dialogModal">
+      <div class="dialog">
+        <button class="close-button" id="closeDialog">Close</button>
+        <h2>Nice try!</h2>
+        <p>Move your cursor toward the close button and watch it dodge away.</p>
+      </div>
+    </div>
     <script>
       const button = document.getElementById('dodger');
       const threshold = 120;
@@ -126,6 +189,9 @@
       function clamp(value, min, max) {
         return Math.min(Math.max(value, min), max);
       }
+
+      const dialogModal = document.getElementById('dialogModal');
+      const closeDialog = document.getElementById('closeDialog');
 
       document.addEventListener('mousemove', (event) => {
         const rect = button.getBoundingClientRect();
@@ -143,6 +209,38 @@
           button.style.left = `${newLeft}px`;
           button.style.top = `${newTop}px`;
           button.style.transform = 'translateX(-50%)';
+        }
+      });
+
+      button.addEventListener('click', () => {
+        dialogModal.classList.add('active');
+      });
+
+      closeDialog.addEventListener('click', () => {
+        dialogModal.classList.remove('active');
+      });
+
+      dialogModal.addEventListener('mousemove', (event) => {
+        if (!dialogModal.classList.contains('active')) return;
+
+        const btnRect = closeDialog.getBoundingClientRect();
+        const dialogRect = closeDialog.offsetParent.getBoundingClientRect();
+        const dx = btnRect.left + btnRect.width / 2 - event.clientX;
+        const dy = btnRect.top + btnRect.height / 2 - event.clientY;
+        const distance = Math.hypot(dx, dy);
+        const thresholdClose = 120;
+
+        if (distance < thresholdClose) {
+          const angle = Math.atan2(dy, dx);
+          const move = Math.min((thresholdClose - distance) * 0.55 + 18, 90);
+          const relX = btnRect.left - dialogRect.left;
+          const relY = btnRect.top - dialogRect.top;
+          const newLeft = clamp(relX + Math.cos(angle) * move, 12, dialogRect.width - btnRect.width - 12);
+          const newTop = clamp(relY + Math.sin(angle) * move, 12, dialogRect.height - btnRect.height - 12);
+
+          closeDialog.style.left = `${newLeft}px`;
+          closeDialog.style.top = `${newTop}px`;
+          closeDialog.style.right = 'auto';
         }
       });
     </script>
