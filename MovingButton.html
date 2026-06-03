@@ -31,21 +31,6 @@
         color: white;
         font-size: 1rem;
         cursor: pointer;
-        transition: transform 0.18s ease, left 0.18s ease, top 0.18s ease, border-radius 0.18s ease, width 0.18s ease, background 0.18s ease, padding 0.18s ease;
-      }
-      .avoid-button.shape-square {
-        border-radius: 18px;
-        width: 120px;
-        padding: 16px 0;
-      }
-      .avoid-button.shape-circle {
-        border-radius: 50%;
-        width: 72px;
-        padding: 18px 0;
-      }
-      .avoid-button.shape-diamond {
-        width: 120px;
-        padding: 14px 0;
       }
       .hint {
         position: absolute;
@@ -55,72 +40,34 @@
         color: #334155;
         font-size: 0.95rem;
       }
-      .scoreboard {
-        position: absolute;
-        top: 18px;
-        right: 24px;
-        padding: 10px 14px;
-        background: rgba(255, 255, 255, 0.88);
-        border-radius: 14px;
-        color: #1e293b;
-        font-size: 0.95rem;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-      }
-      .scoreboard strong {
-        display: block;
-        font-size: 0.82rem;
-        color: #475569;
-        margin-bottom: 4px;
-      }
     </style>
   </head>
   <body>
     <div class="wrapper">
       <div class="hint">Move the mouse closer and the button will run away.</div>
-      <div class="scoreboard">
-        <strong>Points</strong>
-        <span id="scoreValue">0</span>
-      </div>
       <button class="avoid-button" id="avoidButton">Catch me</button>
     </div>
     <script>
       const button = document.getElementById('avoidButton');
-      const scoreValue = document.getElementById('scoreValue');
       const padding = 18;
       const safeDistance = 140;
-      const shapes = ['pill', 'square', 'circle', 'diamond'];
-      let score = 0;
-      let shapeIndex = 0;
+      let targetX = window.innerWidth / 2;
+      let targetY = window.innerHeight / 2;
+      let currentX = targetX;
+      let currentY = targetY;
+      const smoothing = 0.16;
 
       function clamp(value, min, max) {
         return Math.min(Math.max(value, min), max);
       }
 
-      function setShape(shape) {
-        shapes.forEach((name) => button.classList.remove(`shape-${name}`));
-        button.classList.add(`shape-${shape}`);
-        if (shape === 'diamond') {
-          const current = button.style.transform.includes('translate(0, 0)') ? 'translate(0, 0)' : 'translate(-50%, -50%)';
-          button.style.transform = `${current} rotate(45deg)`;
-        } else {
-          button.style.transform = button.style.transform.replace(/rotate\([^)]*\)/, '').trim();
-        }
+      function updateButtonPosition() {
+        currentX += (targetX - currentX) * smoothing;
+        currentY += (targetY - currentY) * smoothing;
+        button.style.left = `${currentX}px`;
+        button.style.top = `${currentY}px`;
+        requestAnimationFrame(updateButtonPosition);
       }
-
-      function nextShape() {
-        shapeIndex = (shapeIndex + 1) % shapes.length;
-        setShape(shapes[shapeIndex]);
-      }
-
-      function addScore() {
-        score += 1;
-        scoreValue.textContent = score;
-      }
-
-      button.addEventListener('click', () => {
-        addScore();
-        nextShape();
-      });
 
       function moveButtonAway(event) {
         const rect = button.getBoundingClientRect();
@@ -135,29 +82,23 @@
         if (distance < safeDistance) {
           const angle = Math.atan2(dy, dx);
           const moveAmount = safeDistance - distance + 24;
-          const newX = clamp(
+          targetX = clamp(
             buttonX + Math.cos(angle) * moveAmount - rect.width / 2,
             padding,
             window.innerWidth - rect.width - padding
           );
-          const newY = clamp(
+          targetY = clamp(
             buttonY + Math.sin(angle) * moveAmount - rect.height / 2,
             padding,
             window.innerHeight - rect.height - padding
           );
-
-          button.style.left = `${newX}px`;
-          button.style.top = `${newY}px`;
-          const currentTransform = button.classList.contains('shape-diamond') ? 'translate(0, 0) rotate(45deg)' : 'translate(0, 0)';
-          button.style.transform = currentTransform;
           button.style.background = '#1d4ed8';
         } else {
-          const currentTransform = button.classList.contains('shape-diamond') ? 'translate(-50%, -50%) rotate(45deg)' : 'translate(-50%, -50%)';
-          button.style.transform = currentTransform;
           button.style.background = '#2563eb';
         }
       }
 
+      updateButtonPosition();
       window.addEventListener('mousemove', moveButtonAway);
     </script>
   </body>
