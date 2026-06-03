@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simple GUI Demo</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --panel: rgba(15, 23, 42, 0.93);
+        --text: #e2e8f0;
+        --accent: #38bdf8;
+        --accent-strong: #0ea5e9;
+        --border: rgba(148, 163, 184, 0.2);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Inter, system-ui, sans-serif;
+        background: radial-gradient(circle at top, #1e293b 0%, #0f172a 60%);
+        color: var(--text);
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+      .app {
+        width: min(980px, 100%);
+        display: grid;
+        gap: 20px;
+      }
+      header {
+        padding: 26px 28px;
+        border-radius: 24px;
+        background: linear-gradient(180deg, rgba(30, 41, 59, 0.96), rgba(15, 23, 42, 0.95));
+        border: 1px solid rgba(148, 163, 184, 0.12);
+        box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
+      }
+      h1 {
+        margin: 0 0 10px;
+        font-size: clamp(1.9rem, 2.5vw, 2.6rem);
+        letter-spacing: -0.03em;
+      }
+      p {
+        margin: 0;
+        color: #cbd5e1;
+        line-height: 1.65;
+      }
+      .panel {
+        display: grid;
+        gap: 18px;
+        padding: 24px;
+        border-radius: 22px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+      }
+      .row {
+        display: grid;
+        gap: 16px;
+      }
+      .row.columns {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .control {
+        display: grid;
+        gap: 8px;
+      }
+      label {
+        font-size: 0.9rem;
+        color: #94a3b8;
+      }
+      input[type="text"], input[type="range"], select {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        background: rgba(15, 23, 42, 0.78);
+        color: var(--text);
+        font-size: 0.98rem;
+      }
+      input[type="range"] {
+        accent-color: var(--accent);
+      }
+      button {
+        border: none;
+        border-radius: 14px;
+        padding: 14px 22px;
+        font-size: 1rem;
+        background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+        color: white;
+        cursor: pointer;
+        transition: transform 0.2s ease, filter 0.2s ease;
+      }
+      button:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.06);
+      }
+      .output {
+        padding: 18px 20px;
+        border-radius: 18px;
+        background: rgba(15, 23, 42, 0.82);
+        border: 1px solid rgba(148, 163, 184, 0.1);
+        min-height: 120px;
+        display: grid;
+        gap: 10px;
+      }
+      .output h2 {
+        margin: 0;
+        font-size: 1rem;
+        color: #e2e8f0;
+      }
+      .output p {
+        margin: 0;
+        color: #cbd5e1;
+        line-height: 1.7;
+      }
+      .preview-box {
+        height: 120px;
+        border-radius: 18px;
+        background: #0f172a;
+        border: 1px dashed rgba(148, 163, 184, 0.25);
+        display: grid;
+        place-items: center;
+        color: #94a3b8;
+      }
+      .preview-box span {
+        display: inline-block;
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: rgba(56, 189, 248, 0.12);
+      }
+      @media (max-width: 700px) {
+        .row.columns {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <header>
+        <h1>GUI Interaction Demo</h1>
+        <p>Use the controls below to update the preview, change the style, and see live output in a small graphical interface.</p>
+      </header>
+      <section class="panel">
+        <div class="row columns">
+          <div class="control">
+            <label for="messageInput">Message</label>
+            <input id="messageInput" type="text" placeholder="Type something..." value="Hello, GUI!" />
+          </div>
+          <div class="control">
+            <label for="themeSelect">Theme</label>
+            <select id="themeSelect">
+              <option value="sky">Sky Blue</option>
+              <option value="sunset">Sunset</option>
+              <option value="forest">Forest</option>
+              <option value="neon">Neon</option>
+            </select>
+          </div>
+        </div>
+        <div class="row columns">
+          <div class="control">
+            <label for="intensityRange">Accent intensity</label>
+            <input id="intensityRange" type="range" min="0" max="100" value="56" />
+          </div>
+          <div class="control">
+            <label for="actionButton">Action</label>
+            <button id="actionButton">Update preview</button>
+          </div>
+        </div>
+      </section>
+      <section class="panel output">
+        <h2>Live Preview</h2>
+        <div class="preview-box" id="previewBox"><span id="previewText">Hello, GUI!</span></div>
+        <p id="statusText">Theme: Sky Blue • Accent intensity: 56%</p>
+      </section>
+    </main>
+    <script>
+      const messageInput = document.getElementById('messageInput');
+      const themeSelect = document.getElementById('themeSelect');
+      const intensityRange = document.getElementById('intensityRange');
+      const actionButton = document.getElementById('actionButton');
+      const previewText = document.getElementById('previewText');
+      const previewBox = document.getElementById('previewBox');
+      const statusText = document.getElementById('statusText');
+
+      const themes = {
+        sky: {
+          bg: 'radial-gradient(circle at top, #0f172a 0%, #1e293b 60%)',
+          panel: 'rgba(15, 23, 42, 0.93)',
+          text: '#e2e8f0',
+          accent: '#38bdf8',
+          accentStrong: '#0ea5e9'
+        },
+        sunset: {
+          bg: 'radial-gradient(circle at top, #1f2937 0%, #4b1120 65%)',
+          panel: 'rgba(30, 18, 24, 0.94)',
+          text: '#f8fafc',
+          accent: '#fb7185',
+          accentStrong: '#f97316'
+        },
+        forest: {
+          bg: 'radial-gradient(circle at top, #081210 0%, #132f1f 70%)',
+          panel: 'rgba(12, 24, 20, 0.93)',
+          text: '#dbe9dc',
+          accent: '#22c55e',
+          accentStrong: '#16a34a'
+        },
+        neon: {
+          bg: 'radial-gradient(circle at top, #060b17 0%, #111827 65%)',
+          panel: 'rgba(6, 11, 23, 0.94)',
+          text: '#e0f2fe',
+          accent: '#7c3aed',
+          accentStrong: '#a855f7'
+        }
+      };
+
+      function updateUI() {
+        const message = messageInput.value.trim() || 'Hello, GUI!';
+        const theme = themes[themeSelect.value];
+        const intensity = Number(intensityRange.value);
+
+        previewText.textContent = message;
+        statusText.textContent = `Theme: ${themeSelect.selectedOptions[0].text} • Accent intensity: ${intensity}%`;
+        previewBox.style.background = theme.panel;
+        document.body.style.background = theme.bg;
+        document.documentElement.style.setProperty('--accent', theme.accent);
+        document.documentElement.style.setProperty('--accent-strong', theme.accentStrong);
+        actionButton.style.filter = `brightness(${1 + intensity / 240})`;
+      }
+
+      messageInput.addEventListener('input', updateUI);
+      themeSelect.addEventListener('change', updateUI);
+      intensityRange.addEventListener('input', updateUI);
+      actionButton.addEventListener('click', () => {
+        actionButton.textContent = 'Updated!';
+        setTimeout(() => {
+          actionButton.textContent = 'Update preview';
+        }, 900);
+      });
+
+      updateUI();
+    </script>
+  </body>
+</html>
