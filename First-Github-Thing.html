@@ -97,6 +97,8 @@
         color: white;
         font-size: 1rem;
         cursor: pointer;
+        transition: left 0.16s ease, top 0.16s ease;
+        will-change: left, top;
       }
     </style>
   </head>
@@ -106,10 +108,8 @@
         <h2>Sidebar</h2>
         <p>Use these safe controls to navigate the page.</p>
         <nav>
-          <button type="button">The most annoying website evr</button>
           <button type="button">Home</button>
-          <button type="button">About</button>
-          <button type="button">The most annoying website evr</button>
+          <button type="button">Nothing</button>
         </nav>
       </aside>
       <main class="content">
@@ -137,12 +137,12 @@
 
         if (distance < threshold) {
           const angle = Math.atan2(dy, dx);
-          const move = threshold - distance + 10;
+          const move = Math.min((threshold - distance) * 0.45 + 8, 32);
           const newLeft = clamp(rect.left + Math.cos(angle) * move, padding, window.innerWidth - rect.width - padding);
           const newTop = clamp(rect.top + Math.sin(angle) * move, padding, window.innerHeight - rect.height - padding);
           button.style.left = `${newLeft}px`;
           button.style.top = `${newTop}px`;
-          button.style.transform = 'translate(0, 0)';
+          button.style.transform = 'translateX(-50%)';
         }
       });
     </script>
