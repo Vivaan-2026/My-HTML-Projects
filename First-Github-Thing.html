@@ -1,1 +1,130 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>A well read document(maybe well written too)</title></head><body><p>test</p></body></html>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>A well read document(maybe well written too)</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        background: #f0f4ff;
+      }
+
+      .moving-button {
+        padding: 14px 24px;
+        border: none;
+        border-radius: 999px;
+        background: #0078d4;
+        color: white;
+        font-size: 1rem;
+        cursor: pointer;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        transition: top 0.18s ease, left 0.18s ease;
+      }
+
+      #trail {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
+
+      .trail-dot {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        opacity: 0.95;
+        transform: translate(-50%, -50%) scale(1);
+        animation: fadeTrail 0.9s ease-out forwards;
+      }
+
+      @keyframes fadeTrail {
+        0% {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(2.2);
+        }
+      }
+
+      .container {
+        text-align: center;
+        gap: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <button class="moving-button" id="dodger">Click me</button>
+    </div>
+    <div id="trail"></div>
+    <script>
+      const button = document.getElementById('dodger');
+      const trail = document.getElementById('trail');
+      const threshold = 140;
+      const padding = 20;
+
+      function clamp(value, min, max) {
+        return Math.min(Math.max(value, min), max);
+      }
+
+      function addTrailDot(x, y) {
+        const dot = document.createElement('span');
+        dot.className = 'trail-dot';
+        dot.style.left = `${x}px`;
+        dot.style.top = `${y}px`;
+        dot.style.background = `hsl(${Math.random() * 360}, 100%, 68%)`;
+        trail.appendChild(dot);
+        dot.addEventListener('animationend', () => dot.remove());
+      }
+
+      function moveButtonAway(event) {
+        const rect = button.getBoundingClientRect();
+        const mouseX = event.clientX;
+        const mouseY = event.clientY;
+        const btnCenterX = rect.left + rect.width / 2;
+        const btnCenterY = rect.top + rect.height / 2;
+        const dx = btnCenterX - mouseX;
+        const dy = btnCenterY - mouseY;
+        const distance = Math.hypot(dx, dy);
+
+        if (distance < threshold) {
+          const angle = Math.atan2(dy, dx);
+          const moveDistance = threshold - distance + 20;
+          const newLeft = clamp(
+            btnCenterX + Math.cos(angle) * moveDistance - rect.width / 2,
+            padding,
+            window.innerWidth - rect.width - padding
+          );
+          const newTop = clamp(
+            btnCenterY + Math.sin(angle) * moveDistance - rect.height / 2,
+            padding,
+            window.innerHeight - rect.height - padding
+          );
+
+          addTrailDot(btnCenterX, btnCenterY);
+          button.style.left = `${newLeft}px`;
+          button.style.top = `${newTop}px`;
+          button.style.transform = 'translate(0, 0)';
+        }
+      }
+
+      window.addEventListener('mousemove', moveButtonAway);
+    </script>
+  </body>
+</html>
