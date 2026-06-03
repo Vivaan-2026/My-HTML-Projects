@@ -1,23 +1,19 @@
 # My HTML Projects
 
-This repository contains interactive HTML demos and experimental page effects.
+This repository contains interactive HTML demos and simple page experiments.
 
 ## Included Files
 
-- `First-Github-Thing2.html` — a browser demo that creates a glowing mouse trail effect.
+- `First-Github-Thing.html` — a browser demo featuring an interactive page effect.
 
-## Mouse Trail Demo
+## Demo Usage
 
-`First-Github-Thing2.html` adds a glowing dot trail behind the cursor.
-Each dot fades out and expands using CSS animation, giving a smooth motion effect.
-
-### How to use
-
-1. Open `First-Github-Thing2.html` in your browser.
-2. Move the mouse around the page.
-3. The trail will follow and fade automatically.
+1. Open `First-Github-Thing.html` in your browser.
+2. Explore the page and interact with the content.
+3. Refresh the page to reset the demo if needed.
 
 ## Notes
 
-- The effect is implemented with CSS animations and JavaScript DOM elements.
-- Touch movement is also supported for mobile devices.
+- The demo is built with HTML, CSS, and JavaScript.
+- It is intended for local use in a browser.
+- You can open the file directly or host it with a simple static server.

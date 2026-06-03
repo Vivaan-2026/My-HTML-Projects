@@ -69,6 +69,7 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
+        position: relative;
       }
 
       .content h1 {
@@ -83,6 +84,20 @@
         line-height: 1.7;
         color: #334155;
       }
+
+      .moving-button {
+        position: absolute;
+        top: 40px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 14px 24px;
+        border: none;
+        border-radius: 999px;
+        background: #0078d4;
+        color: white;
+        font-size: 1rem;
+        cursor: pointer;
+      }
     </style>
   </head>
   <body>
@@ -91,14 +106,45 @@
         <h2>Sidebar</h2>
         <p>Use these safe controls to navigate the page.</p>
         <nav>
+          <button type="button">The most annoying website evr</button>
           <button type="button">Home</button>
           <button type="button">About</button>
+          <button type="button">The most annoying website evr</button>
         </nav>
       </aside>
       <main class="content">
+        <button class="moving-button" id="dodger">Click me</button>
         <h1>Welcome back</h1>
         <p>This page has been cleaned and restored. The sidebar is intact, and the markup now validates properly.</p>
       </main>
     </div>
+    <script>
+      const button = document.getElementById('dodger');
+      const threshold = 120;
+      const padding = 16;
+
+      function clamp(value, min, max) {
+        return Math.min(Math.max(value, min), max);
+      }
+
+      document.addEventListener('mousemove', (event) => {
+        const rect = button.getBoundingClientRect();
+        const btnX = rect.left + rect.width / 2;
+        const btnY = rect.top + rect.height / 2;
+        const dx = btnX - event.clientX;
+        const dy = btnY - event.clientY;
+        const distance = Math.hypot(dx, dy);
+
+        if (distance < threshold) {
+          const angle = Math.atan2(dy, dx);
+          const move = threshold - distance + 10;
+          const newLeft = clamp(rect.left + Math.cos(angle) * move, padding, window.innerWidth - rect.width - padding);
+          const newTop = clamp(rect.top + Math.sin(angle) * move, padding, window.innerHeight - rect.height - padding);
+          button.style.left = `${newLeft}px`;
+          button.style.top = `${newTop}px`;
+          button.style.transform = 'translate(0, 0)';
+        }
+      });
+    </script>
   </body>
 </html>
