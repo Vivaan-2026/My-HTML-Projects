@@ -87,7 +87,7 @@
       }
 
       .moving-button {
-        position: absolute;
+        position: fixed;
         top: 40px;
         left: 50%;
         transform: translateX(-50%);
@@ -100,6 +100,7 @@
         cursor: pointer;
         transition: left 0.16s ease, top 0.16s ease;
         will-change: left, top;
+        z-index: 150;
       }
 
       .modal {
@@ -192,6 +193,108 @@
         z-index: 90;
         transform: translate(-50%, -50%);
       }
+
+      .ball {
+        position: fixed;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: radial-gradient(circle, #f97316 0%, #dc2626 45%, #991b1b 100%);
+        box-shadow: 0 0 18px rgba(220, 38, 38, 0.7);
+        pointer-events: none;
+        z-index: 120;
+        transform: translate(-50%, -50%);
+      }
+
+      .shield {
+        position: fixed;
+        width: 88px;
+        height: 88px;
+        border-radius: 50%;
+        border: 3px solid rgba(59, 130, 246, 0.9);
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+        pointer-events: none;
+        z-index: 1999;
+        transform: translate(-50%, -50%);
+        animation: spin 1.2s linear infinite;
+        display: none;
+      }
+
+      @keyframes spin {
+        from { transform: translate(-50%, -50%) rotate(0deg); }
+        to { transform: translate(-50%, -50%) rotate(360deg); }
+      }
+
+      .upgrade-panel {
+        position: fixed;
+        top: 72px;
+        right: 16px;
+        width: 210px;
+        padding: 14px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 20px 60px rgba(15, 23, 42, 0.16);
+        color: #0f172a;
+        z-index: 2100;
+        font-size: 0.95rem;
+      }
+
+      .upgrade-panel h3 {
+        margin: 0 0 8px;
+        font-size: 1rem;
+      }
+
+      .upgrade-button {
+        width: 100%;
+        padding: 10px 12px;
+        font-size: 0.95rem;
+        border: none;
+        border-radius: 12px;
+        background: #2563eb;
+        color: #ffffff;
+        cursor: pointer;
+      }
+
+      .upgrade-button:disabled {
+        background: #94a3b8;
+        cursor: not-allowed;
+      }
+
+      .upgrade-status {
+        margin-top: 10px;
+        color: #334155;
+      }
+
+      .score-panel {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        padding: 10px 14px;
+        border-radius: 14px;
+        background: rgba(15, 23, 42, 0.9);
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 0.95rem;
+        z-index: 2100;
+      }
+
+      .game-over {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(15, 23, 42, 0.88);
+        color: #ffffff;
+        font-size: 2rem;
+        font-weight: 700;
+        text-align: center;
+        z-index: 2200;
+      }
+
+      .game-over.active {
+        display: flex;
+      }
     </style>
   </head>
   <body>
@@ -222,12 +325,21 @@
 
     <div class="black-hole" id="blackHole"></div>
     <div class="fake-cursor" id="fakeCursor"></div>
+    <div class="ball" id="ball"></div>
     <div class="space-item"></div>
     <div class="space-item"></div>
     <div class="space-item"></div>
     <div class="space-item"></div>
     <div class="space-item"></div>
     <div class="space-item"></div>
+    <div class="score-panel" id="scorePanel">Score: 0</div>
+    <div class="upgrade-panel">
+      <h3>Upgrades</h3>
+      <button class="upgrade-button" id="shieldUpgradeButton" type="button">Shield: 100 points</button>
+      <div class="upgrade-status" id="shieldStatus">Locked</div>
+    </div>
+    <div class="game-over" id="gameOver">Game over<br />You touched the ball</div>
+    <div class="shield" id="shield"></div>
     <script>
       const button = document.getElementById('dodger');
       const threshold = 120;
@@ -236,6 +348,12 @@
       const fakeCursor = document.getElementById('fakeCursor');
       const dialogModal = document.getElementById('dialogModal');
       const closeDialog = document.getElementById('closeDialog');
+      const scorePanel = document.getElementById('scorePanel');
+      const gameOver = document.getElementById('gameOver');
+      const ball = document.getElementById('ball');
+      const shield = document.getElementById('shield');
+      const shieldUpgradeButton = document.getElementById('shieldUpgradeButton');
+      const shieldStatus = document.getElementById('shieldStatus');
       const spaceItems = Array.from(document.querySelectorAll('.space-item'));
 
       let actualMouseX = window.innerWidth / 2;
@@ -245,6 +363,29 @@
       let holeX = 0;
       let holeY = 0;
       let buttonLost = false;
+      let gameLost = false;
+      let score = 0;
+      let startTime = performance.now();
+      let shieldPurchased = false;
+      let ballGone = false;
+      const shieldRadius = 42;
+
+      const ballState = {
+        x: 100,
+        y: 120,
+        vx: 4,
+        vy: 3.8,
+        r: 14,
+      };
+
+      const buttonState = {
+        el: button,
+        x: window.innerWidth / 2,
+        y: 40 + button.offsetHeight / 2,
+        vx: 0,
+        vy: 0,
+        r: 32,
+      };
 
       const itemStates = spaceItems.map((item) => ({
         el: item,
@@ -252,6 +393,7 @@
         y: Math.random() * (window.innerHeight - 80) + 40,
         vx: 0,
         vy: 0,
+        r: 12,
       }));
 
       function clamp(value, min, max) {
@@ -265,7 +407,31 @@
         blackHole.style.top = `${holeY - 45}px`;
       }
 
+      function updateButtonPosition() {
+        button.style.left = `${buttonState.x}px`;
+        button.style.top = `${buttonState.y}px`;
+        button.style.transform = 'translateX(-50%)';
+      }
+
+      updateButtonPosition();
       placeBlackHole();
+      ball.style.left = `${ballState.x}px`;
+      ball.style.top = `${ballState.y}px`;
+      shield.style.display = 'none';
+      shieldUpgradeButton.addEventListener('click', () => {
+        if (shieldPurchased || score < 100) return;
+        shieldPurchased = true;
+        shieldStatus.textContent = 'Active';
+        shieldUpgradeButton.disabled = true;
+        shieldUpgradeButton.textContent = 'Shield active';
+        score -= 100;
+        scorePanel.textContent = `Score: ${score}`;
+        shield.style.display = 'block';
+      });
+
+      window.addEventListener('resize', () => {
+        placeBlackHole();
+      });
 
       document.addEventListener('mousemove', (event) => {
         actualMouseX = event.clientX;
@@ -294,11 +460,26 @@
             continue;
           }
 
-          const pull = Math.min(120 / Math.max(dist, 60), 4);
-          state.vx += (dx / dist) * pull * 0.06;
-          state.vy += (dy / dist) * pull * 0.06;
-          state.vx *= 0.92;
-          state.vy *= 0.92;
+          const pull = Math.min(140 / Math.max(dist, 50), 4);
+          state.vx += (dx / dist) * pull * 0.08;
+          state.vy += (dy / dist) * pull * 0.08;
+
+          for (let j = 0; j < itemStates.length; j++) {
+            if (i === j) continue;
+            const other = itemStates[j];
+            const ox = state.x - other.x;
+            const oy = state.y - other.y;
+            const od = Math.hypot(ox, oy) || 1;
+            const minDist = state.r + other.r + 8;
+            if (od < minDist) {
+              const repel = (minDist - od) * 0.02;
+              state.vx += (ox / od) * repel;
+              state.vy += (oy / od) * repel;
+            }
+          }
+
+            state.vx *= 0.94;
+          state.vy *= 0.94;
           state.x += state.vx;
           state.y += state.vy;
           state.el.style.left = `${state.x}px`;
@@ -306,25 +487,105 @@
           state.el.style.transform = `translate(-50%, -50%) scale(${1 - Math.min(dist / 280, 0.55)})`;
         }
 
-        const buttonVisible = !buttonLost && button.style.display !== 'none';
-        if (buttonVisible) {
-          const buttonRect = button.getBoundingClientRect();
-          let buttonCenterX = buttonRect.left + buttonRect.width / 2;
-          let buttonCenterY = buttonRect.top + buttonRect.height / 2;
-          const buttonDist = Math.hypot(holeX - buttonCenterX, holeY - buttonCenterY);
+        if (!ballGone) {
+          const bdx = holeX - ballState.x;
+          const bdy = holeY - ballState.y;
+          const bdist = Math.hypot(bdx, bdy);
+          const bPull = Math.min(180 / Math.max(bdist, 50), 9);
+          ballState.vx += (bdx / Math.max(bdist, 1)) * bPull * 0.05;
+          ballState.vy += (bdy / Math.max(bdist, 1)) * bPull * 0.05;
 
-          if (buttonDist < 40) {
+          ballState.x += ballState.vx;
+          ballState.y += ballState.vy;
+
+          if (ballState.x < ballState.r || ballState.x > window.innerWidth - ballState.r) {
+            ballState.vx *= -1;
+            ballState.x = clamp(ballState.x, ballState.r, window.innerWidth - ballState.r);
+          }
+          if (ballState.y < ballState.r || ballState.y > window.innerHeight - ballState.r) {
+            ballState.vy *= -1;
+            ballState.y = clamp(ballState.y, ballState.r, window.innerHeight - ballState.r);
+          }
+
+          if (shieldPurchased) {
+            shield.style.left = `${actualMouseX}px`;
+            shield.style.top = `${actualMouseY}px`;
+            const sx = actualMouseX;
+            const sy = actualMouseY;
+            const sdx = ballState.x - sx;
+            const sdy = ballState.y - sy;
+            const sdist = Math.hypot(sdx, sdy);
+            if (sdist < ballState.r + shieldRadius) {
+              const nx = sdx / Math.max(sdist, 1);
+              const ny = sdy / Math.max(sdist, 1);
+              const speed = Math.max(Math.hypot(ballState.vx, ballState.vy), 5);
+              ballState.vx = nx * speed;
+              ballState.vy = ny * speed;
+              ballState.x = sx + (ballState.r + shieldRadius + 2) * nx;
+              ballState.y = sy + (ballState.r + shieldRadius + 2) * ny;
+            }
+          }
+
+          const holeDistance = Math.hypot(holeX - ballState.x, holeY - ballState.y);
+          if (holeDistance < 28) {
+            ballGone = true;
+            ball.style.display = 'none';
+          } else {
+            ball.style.left = `${ballState.x}px`;
+            ball.style.top = `${ballState.y}px`;
+          }
+        }
+
+        if (!buttonLost) {
+          const bx = buttonState.x;
+          const by = buttonState.y;
+          const dx = holeX - bx;
+          const dy = holeY - by;
+          const dist = Math.hypot(dx, dy);
+
+          if (dist < 40) {
             buttonLost = true;
             button.style.display = 'none';
-          } else if (buttonDist > 0) {
-            const strength = Math.min(220 / Math.max(buttonDist, 80), 14);
-            buttonCenterX += (holeX - buttonCenterX) / buttonDist * strength * 0.5;
-            buttonCenterY += (holeY - buttonCenterY) / buttonDist * strength * 0.5;
-            const buttonLeft = clamp(buttonCenterX, padding + buttonRect.width / 2, window.innerWidth - padding - buttonRect.width / 2);
-            const buttonTop = clamp(buttonCenterY, padding + buttonRect.height / 2, window.innerHeight - padding - buttonRect.height / 2);
-            button.style.left = `${buttonLeft}px`;
-            button.style.top = `${buttonTop}px`;
-            button.style.transform = 'translateX(-50%)';
+          } else {
+            const pull = Math.min(220 / Math.max(dist, 80), 18);
+            buttonState.vx += (dx / dist) * pull * 0.08;
+            buttonState.vy += (dy / dist) * pull * 0.08;
+
+            for (const other of itemStates) {
+              const ox = buttonState.x - other.x;
+              const oy = buttonState.y - other.y;
+              const od = Math.hypot(ox, oy) || 1;
+              const minDist = buttonState.r + other.r + 18;
+              if (od < minDist) {
+                const repel = (minDist - od) * 0.05;
+                buttonState.vx += (ox / od) * repel;
+                buttonState.vy += (oy / od) * repel;
+              }
+            }
+
+            buttonState.vx *= 0.88;
+            buttonState.vy *= 0.88;
+            buttonState.x = clamp(buttonState.x + buttonState.vx, padding + 40, window.innerWidth - padding - 40);
+            buttonState.y = clamp(buttonState.y + buttonState.vy, padding + 40, window.innerHeight - padding - 40);
+            updateButtonPosition();
+          }
+        }
+
+        if (!gameLost) {
+          const bx = actualMouseX;
+          const by = actualMouseY;
+          const dx = ballState.x - bx;
+          const dy = ballState.y - by;
+          const dist = Math.hypot(dx, dy);
+          if (dist < ballState.r + 6) {
+            gameLost = true;
+            gameOver.classList.add('active');
+          }
+
+          const elapsed = Math.floor((performance.now() - startTime) / 1000);
+          if (elapsed > score) {
+            score = elapsed;
+            scorePanel.textContent = `Score: ${score}`;
           }
         }
 
