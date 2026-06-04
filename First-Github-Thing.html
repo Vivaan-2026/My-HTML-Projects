@@ -180,6 +180,18 @@
         transform: translate(-50%, -50%);
         z-index: 2000;
       }
+
+      .space-item {
+        position: fixed;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: radial-gradient(circle, #facc15 0%, #f59e0b 45%, #dc2626 100%);
+        box-shadow: 0 0 16px rgba(250,204,21,0.55);
+        pointer-events: none;
+        z-index: 90;
+        transform: translate(-50%, -50%);
+      }
     </style>
   </head>
   <body>
@@ -196,6 +208,7 @@
         <button class="moving-button" id="dodger">Click me</button>
         <h1>Welcome back</h1>
         <p>This page has been cleaned and restored. The sidebar is intact, and the markup now validates properly.</p>
+        <p>Watch the black hole pull in floating objects and eventually swallow the button too.</p>
       </main>
     </div>
 
@@ -209,6 +222,12 @@
 
     <div class="black-hole" id="blackHole"></div>
     <div class="fake-cursor" id="fakeCursor"></div>
+    <div class="space-item"></div>
+    <div class="space-item"></div>
+    <div class="space-item"></div>
+    <div class="space-item"></div>
+    <div class="space-item"></div>
+    <div class="space-item"></div>
     <script>
       const button = document.getElementById('dodger');
       const threshold = 120;
@@ -217,6 +236,7 @@
       const fakeCursor = document.getElementById('fakeCursor');
       const dialogModal = document.getElementById('dialogModal');
       const closeDialog = document.getElementById('closeDialog');
+      const spaceItems = Array.from(document.querySelectorAll('.space-item'));
 
       let actualMouseX = window.innerWidth / 2;
       let actualMouseY = window.innerHeight / 2;
@@ -224,6 +244,15 @@
       let fakeMouseY = actualMouseY;
       let holeX = 0;
       let holeY = 0;
+      let buttonLost = false;
+
+      const itemStates = spaceItems.map((item) => ({
+        el: item,
+        x: Math.random() * (window.innerWidth - 80) + 40,
+        y: Math.random() * (window.innerHeight - 80) + 40,
+        vx: 0,
+        vy: 0,
+      }));
 
       function clamp(value, min, max) {
         return Math.min(Math.max(value, min), max);
@@ -253,19 +282,50 @@
         fakeCursor.style.left = `${fakeMouseX}px`;
         fakeCursor.style.top = `${fakeMouseY}px`;
 
-        const buttonRect = button.getBoundingClientRect();
-        let buttonCenterX = buttonRect.left + buttonRect.width / 2;
-        let buttonCenterY = buttonRect.top + buttonRect.height / 2;
-        const buttonDist = Math.hypot(holeX - buttonCenterX, holeY - buttonCenterY);
-        if (buttonDist > 0) {
-          const strength = Math.min(220 / Math.max(buttonDist, 80), 14);
-          buttonCenterX += (holeX - buttonCenterX) / buttonDist * strength * 0.5;
-          buttonCenterY += (holeY - buttonCenterY) / buttonDist * strength * 0.5;
-          const buttonLeft = clamp(buttonCenterX, padding + buttonRect.width / 2, window.innerWidth - padding - buttonRect.width / 2);
-          const buttonTop = clamp(buttonCenterY, padding + buttonRect.height / 2, window.innerHeight - padding - buttonRect.height / 2);
-          button.style.left = `${buttonLeft}px`;
-          button.style.top = `${buttonTop}px`;
-          button.style.transform = 'translateX(-50%)';
+        for (let i = itemStates.length - 1; i >= 0; i--) {
+          const state = itemStates[i];
+          const dx = holeX - state.x;
+          const dy = holeY - state.y;
+          const dist = Math.hypot(dx, dy);
+
+          if (dist < 28) {
+            state.el.remove();
+            itemStates.splice(i, 1);
+            continue;
+          }
+
+          const pull = Math.min(120 / Math.max(dist, 60), 4);
+          state.vx += (dx / dist) * pull * 0.06;
+          state.vy += (dy / dist) * pull * 0.06;
+          state.vx *= 0.92;
+          state.vy *= 0.92;
+          state.x += state.vx;
+          state.y += state.vy;
+          state.el.style.left = `${state.x}px`;
+          state.el.style.top = `${state.y}px`;
+          state.el.style.transform = `translate(-50%, -50%) scale(${1 - Math.min(dist / 280, 0.55)})`;
+        }
+
+        const buttonVisible = !buttonLost && button.style.display !== 'none';
+        if (buttonVisible) {
+          const buttonRect = button.getBoundingClientRect();
+          let buttonCenterX = buttonRect.left + buttonRect.width / 2;
+          let buttonCenterY = buttonRect.top + buttonRect.height / 2;
+          const buttonDist = Math.hypot(holeX - buttonCenterX, holeY - buttonCenterY);
+
+          if (buttonDist < 40) {
+            buttonLost = true;
+            button.style.display = 'none';
+          } else if (buttonDist > 0) {
+            const strength = Math.min(220 / Math.max(buttonDist, 80), 14);
+            buttonCenterX += (holeX - buttonCenterX) / buttonDist * strength * 0.5;
+            buttonCenterY += (holeY - buttonCenterY) / buttonDist * strength * 0.5;
+            const buttonLeft = clamp(buttonCenterX, padding + buttonRect.width / 2, window.innerWidth - padding - buttonRect.width / 2);
+            const buttonTop = clamp(buttonCenterY, padding + buttonRect.height / 2, window.innerHeight - padding - buttonRect.height / 2);
+            button.style.left = `${buttonLeft}px`;
+            button.style.top = `${buttonTop}px`;
+            button.style.transform = 'translateX(-50%)';
+          }
         }
 
         if (dialogModal.classList.contains('active')) {
