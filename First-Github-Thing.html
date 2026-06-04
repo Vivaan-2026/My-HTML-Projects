@@ -10,7 +10,7 @@
         min-height: 100vh;
         font-family: Arial, sans-serif;
         background: #f0f4ff;
-        cursor: none;
+        cursor: default;
       }
 
       .page {
@@ -159,11 +159,11 @@
 
       .black-hole {
         position: fixed;
-        width: 140px;
-        height: 140px;
+        width: 90px;
+        height: 90px;
         border-radius: 50%;
         background: radial-gradient(circle, #111 0%, #000 45%, rgba(0,0,0,0.95) 70%, transparent 100%);
-        box-shadow: 0 0 80px rgba(0,0,0,0.65), inset 0 0 24px rgba(255,255,255,0.08);
+        box-shadow: 0 0 48px rgba(0,0,0,0.65), inset 0 0 18px rgba(255,255,255,0.08);
         pointer-events: none;
         z-index: 80;
       }
@@ -213,14 +213,6 @@
       const button = document.getElementById('dodger');
       const threshold = 120;
       const padding = 16;
-
-      function clamp(value, min, max) {
-        return Math.min(Math.max(value, min), max);
-      }
-
-      const dialogModal = document.getElementById('dialogModal');
-      const closeDialog = document.getElementById('closeDialog');
-
       const blackHole = document.getElementById('blackHole');
       const fakeCursor = document.getElementById('fakeCursor');
       const dialogModal = document.getElementById('dialogModal');
@@ -233,22 +225,18 @@
       let holeX = 0;
       let holeY = 0;
 
+      function clamp(value, min, max) {
+        return Math.min(Math.max(value, min), max);
+      }
+
       function placeBlackHole() {
-        holeX = 120 + Math.random() * (window.innerWidth - 240);
-        holeY = 120 + Math.random() * (window.innerHeight - 240);
-        blackHole.style.left = `${holeX - 70}px`;
-        blackHole.style.top = `${holeY - 70}px`;
+        holeX = 90 + Math.random() * (window.innerWidth - 180);
+        holeY = 90 + Math.random() * (window.innerHeight - 180);
+        blackHole.style.left = `${holeX - 45}px`;
+        blackHole.style.top = `${holeY - 45}px`;
       }
 
       placeBlackHole();
-
-      function attractToHole(x, y, strength) {
-        const dx = holeX - x;
-        const dy = holeY - y;
-        const distance = Math.hypot(dx, dy) || 1;
-        const force = Math.min(strength / (distance * distance), 0.45);
-        return {x: x + (dx / distance) * force, y: y + (dy / distance) * force};
-      }
 
       document.addEventListener('mousemove', (event) => {
         actualMouseX = event.clientX;
@@ -262,7 +250,6 @@
         const mousePull = Math.min(160 / Math.max(mouseDist, 80), 12);
         fakeMouseX += (mouseDx / Math.max(mouseDist, 1)) * mousePull;
         fakeMouseY += (mouseDy / Math.max(mouseDist, 1)) * mousePull;
-
         fakeCursor.style.left = `${fakeMouseX}px`;
         fakeCursor.style.top = `${fakeMouseY}px`;
 
@@ -274,8 +261,8 @@
           const strength = Math.min(220 / Math.max(buttonDist, 80), 14);
           buttonCenterX += (holeX - buttonCenterX) / buttonDist * strength * 0.5;
           buttonCenterY += (holeY - buttonCenterY) / buttonDist * strength * 0.5;
-          let buttonLeft = clamp(buttonCenterX, padding + buttonRect.width / 2, window.innerWidth - padding - buttonRect.width / 2);
-          let buttonTop = clamp(buttonCenterY, padding + buttonRect.height / 2, window.innerHeight - padding - buttonRect.height / 2);
+          const buttonLeft = clamp(buttonCenterX, padding + buttonRect.width / 2, window.innerWidth - padding - buttonRect.width / 2);
+          const buttonTop = clamp(buttonCenterY, padding + buttonRect.height / 2, window.innerHeight - padding - buttonRect.height / 2);
           button.style.left = `${buttonLeft}px`;
           button.style.top = `${buttonTop}px`;
           button.style.transform = 'translateX(-50%)';
@@ -301,11 +288,6 @@
       }
 
       requestAnimationFrame(updateFrame);
-
-      document.addEventListener('mousemove', (event) => {
-        actualMouseX = event.clientX;
-        actualMouseY = event.clientY;
-      });
 
       button.addEventListener('click', () => {
         dialogModal.classList.add('active');
@@ -337,37 +319,6 @@
           const relY = btnRect.top - dialogRect.top;
           const newLeft = clamp(relX + Math.cos(angle) * move, 12, dialogRect.width - btnRect.width - 12);
           const newTop = clamp(relY + Math.sin(angle) * move, 12, dialogRect.height - btnRect.height - 12);
-          closeDialog.style.left = `${newLeft}px`;
-          closeDialog.style.top = `${newTop}px`;
-          closeDialog.style.right = 'auto';
-        }
-      });
-    </script>
-        dialogModal.classList.add('active');
-      });
-
-      closeDialog.addEventListener('click', () => {
-        dialogModal.classList.remove('active');
-      });
-
-      dialogModal.addEventListener('mousemove', (event) => {
-        if (!dialogModal.classList.contains('active')) return;
-
-        const btnRect = closeDialog.getBoundingClientRect();
-        const dialogRect = closeDialog.offsetParent.getBoundingClientRect();
-        const dx = btnRect.left + btnRect.width / 2 - event.clientX;
-        const dy = btnRect.top + btnRect.height / 2 - event.clientY;
-        const distance = Math.hypot(dx, dy);
-        const thresholdClose = 120;
-
-        if (distance < thresholdClose) {
-          const angle = Math.atan2(dy, dx);
-          const move = Math.min((thresholdClose - distance) * 0.55 + 18, 90);
-          const relX = btnRect.left - dialogRect.left;
-          const relY = btnRect.top - dialogRect.top;
-          const newLeft = clamp(relX + Math.cos(angle) * move, 12, dialogRect.width - btnRect.width - 12);
-          const newTop = clamp(relY + Math.sin(angle) * move, 12, dialogRect.height - btnRect.height - 12);
-
           closeDialog.style.left = `${newLeft}px`;
           closeDialog.style.top = `${newTop}px`;
           closeDialog.style.right = 'auto';
